@@ -223,7 +223,7 @@ def _time_heatmap(probabilities: np.ndarray, times: np.ndarray, stride: int) -> 
 
 
 def main() -> None:
-    st.set_page_config(page_title="Mobility Edge", layout="wide")
+    st.set_page_config(page_title="Mobility Edge/Time evolution", layout="wide")
     inject_css()
     st.title("Mobility-edge Analysis")
     st.caption("Explore localization structure via IPR maps, eigenstate heatmaps, and time-dynamics animations.")
