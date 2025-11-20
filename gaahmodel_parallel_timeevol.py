@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Full pipeline for generalized Aubry–André–Harper (GAAH) model.
+generalized Aubry–André–Harper (GAAH) model.
 
 Features:
 - Static spectral analysis: eigenvalues, eigenvectors, IPR, level-spacing ⟨r⟩
