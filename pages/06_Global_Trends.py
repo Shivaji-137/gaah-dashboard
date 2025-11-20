@@ -133,7 +133,7 @@ def plot_lyapunov(
     mode: str = "Heatmap"
 ) -> go.Figure:
     """
-    Flexible Lyapunov visualization:
+    Flexible Lyapunov visualization with robust handling of mismatched array shapes.
     - Heatmap: requires edges
     - Line plots vs Energy
     - Scatter plot
@@ -146,7 +146,76 @@ def plot_lyapunov(
     if not lam_values:
         return fig
 
-    if mode == "Heatmap":
+    skipped_pairs = 0
+    total_pairs = 0
+
+    def _prepare_pair(lyap_arr_in, eig_arr_in):
+        """
+        Convert inputs to 1D floats and try to make them compatible.
+        Returns (lyap_arr, eig_arr) or (None, None) to signal skipping.
+        """
+        nonlocal skipped_pairs, total_pairs
+        total_pairs += 1
+
+        lyap_arr = np.asarray(lyap_arr_in, dtype=float).ravel()
+        eig_arr = np.asarray(eig_arr_in, dtype=float).ravel()
+
+        # If both are empty -> skip
+        if lyap_arr.size == 0 or eig_arr.size == 0:
+            skipped_pairs += 1
+            return None, None
+
+        # If shapes match -> good
+        if lyap_arr.size == eig_arr.size:
+            # mask finite entries elementwise
+            mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
+            lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
+            if eig_arr.size == 0:
+                skipped_pairs += 1
+                return None, None
+            return lyap_arr, eig_arr
+
+        # If lyap is a single scalar, broadcast to length of eig_arr
+        if lyap_arr.size == 1:
+            val = lyap_arr.item()
+            lyap_arr = np.full(eig_arr.shape, val, dtype=float)
+            mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
+            lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
+            if eig_arr.size == 0:
+                skipped_pairs += 1
+                return None, None
+            return lyap_arr, eig_arr
+
+        # If eig is single scalar (unlikely), broadcast eig to lyap length
+        if eig_arr.size == 1:
+            val = eig_arr.item()
+            eig_arr = np.full(lyap_arr.shape, val, dtype=float)
+            mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
+            lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
+            if eig_arr.size == 0:
+                skipped_pairs += 1
+                return None, None
+            return lyap_arr, eig_arr
+
+        # Last resort: sizes differ and cannot sensibly broadcast -> skip
+        skipped_pairs += 1
+        return None, None
+    
+    if mode == "Line plots vs Energy":
+        for lam in lam_values:
+            for lyap_arr_in, eig_arr_in in zip(lyapunov_map.get(lam, []), energy_map.get(lam, [])):
+                lyap_arr, eig_arr = _prepare_pair(lyap_arr_in, eig_arr_in)
+                if lyap_arr is None:
+                    continue
+                fig.add_trace(go.Scatter(x=eig_arr, y=lyap_arr,
+                                         mode="lines", name=f"λ={lam:.2f}",
+                                         line=dict(width=1), opacity=0.5))
+        fig.update_layout(
+            xaxis_title="Energy E", yaxis_title="Lyapunov exponent λ_LE",
+            template="plotly_dark", margin=dict(l=70, r=40, t=40, b=60)
+        )
+        
+    elif mode == "Heatmap":
         if edges is None or edges.size < 2:
             st.warning("Energy edges are required for heatmap mode.")
             return fig
@@ -157,13 +226,15 @@ def plot_lyapunov(
             hist_sum = np.zeros_like(centers, dtype=float)
             hist_count = np.zeros_like(centers, dtype=float)
 
-            for lyap_arr, eig_arr in zip(lyapunov_map[lam], energy_map.get(lam, [])):
-                lyap_arr = np.asarray(lyap_arr, dtype=float)
-                eig_arr = np.asarray(eig_arr, dtype=float)
-                mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
-                lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
-                if eig_arr.size == 0:
+            # pairwise iterate
+            lyap_list = lyapunov_map.get(lam, [])
+            eig_list = energy_map.get(lam, [])
+            for lyap_arr_in, eig_arr_in in zip(lyap_list, eig_list):
+                lyap_arr, eig_arr = _prepare_pair(lyap_arr_in, eig_arr_in)
+                if lyap_arr is None:
                     continue
+
+                # now safe: eig_arr and lyap_arr have same length
                 counts, _ = np.histogram(eig_arr, bins=edges)
                 sums, _ = np.histogram(eig_arr, bins=edges, weights=lyap_arr)
                 hist_sum += sums
@@ -172,7 +243,13 @@ def plot_lyapunov(
             avg_lyap = np.divide(hist_sum, hist_count, out=np.zeros_like(hist_sum), where=hist_count > 0)
             z_rows.append(avg_lyap)
 
-        z = np.vstack(z_rows) if z_rows else np.empty((0, centers.size))
+        if not z_rows:
+            # nothing to plot
+            if skipped_pairs and total_pairs:
+                st.warning(f"Lyapunov/energy pairs present but {skipped_pairs}/{total_pairs} were incompatible and skipped.")
+            return fig
+
+        z = np.vstack(z_rows)
         fig.add_trace(go.Heatmap(
             z=z, x=centers, y=lam_values, colorscale="Cividis",
             colorbar=dict(title="⟨λ_LE⟩")
@@ -182,31 +259,13 @@ def plot_lyapunov(
             template="plotly_dark", margin=dict(l=70, r=40, t=40, b=60)
         )
 
-    elif mode == "Line plots vs Energy":
-        for lam in lam_values:
-            for lyap_arr, eig_arr in zip(lyapunov_map[lam], energy_map.get(lam, [])):
-                lyap_arr = np.asarray(lyap_arr, dtype=float)
-                eig_arr = np.asarray(eig_arr, dtype=float)
-                mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
-                lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
-                if eig_arr.size == 0:
-                    continue
-                fig.add_trace(go.Scatter(x=eig_arr, y=lyap_arr,
-                                         mode="lines", name=f"λ={lam:.2f}",
-                                         line=dict(width=1), opacity=0.5))
-        fig.update_layout(
-            xaxis_title="Energy E", yaxis_title="Lyapunov exponent λ_LE",
-            template="plotly_dark", margin=dict(l=70, r=40, t=40, b=60)
-        )
+    
 
     elif mode == "Scatter plot":
         for lam in lam_values:
-            for lyap_arr, eig_arr in zip(lyapunov_map[lam], energy_map.get(lam, [])):
-                lyap_arr = np.asarray(lyap_arr, dtype=float)
-                eig_arr = np.asarray(eig_arr, dtype=float)
-                mask = np.isfinite(lyap_arr) & np.isfinite(eig_arr)
-                lyap_arr, eig_arr = lyap_arr[mask], eig_arr[mask]
-                if eig_arr.size == 0:
+            for lyap_arr_in, eig_arr_in in zip(lyapunov_map.get(lam, []), energy_map.get(lam, [])):
+                lyap_arr, eig_arr = _prepare_pair(lyap_arr_in, eig_arr_in)
+                if lyap_arr is None:
                     continue
                 fig.add_trace(go.Scatter(x=eig_arr, y=lyap_arr,
                                          mode="markers", name=f"λ={lam:.2f}",
@@ -218,7 +277,15 @@ def plot_lyapunov(
 
     elif mode == "Histogram":
         for lam in lam_values:
-            lyap_all = np.concatenate([arr for arr in lyapunov_map[lam] if arr.size])
+            # collect only lyap arrays that are non-empty and 1d
+            lyap_all_parts = []
+            for lyap_arr_in in lyapunov_map.get(lam, []):
+                arr = np.asarray(lyap_arr_in, dtype=float).ravel()
+                if arr.size:
+                    lyap_all_parts.append(arr)
+            if not lyap_all_parts:
+                continue
+            lyap_all = np.concatenate(lyap_all_parts)
             fig.add_trace(go.Histogram(x=lyap_all, name=f"λ={lam:.2f}", opacity=0.6))
         fig.update_layout(
             xaxis_title="Lyapunov exponent λ_LE", yaxis_title="Count",
@@ -228,17 +295,27 @@ def plot_lyapunov(
     elif mode == "Average λ_LE vs λ":
         lam_vals, avg_lyap = [], []
         for lam in lam_values:
-            lyap_all = np.concatenate([arr for arr in lyapunov_map[lam] if arr.size])
+            parts = [np.asarray(arr, dtype=float).ravel() for arr in lyapunov_map.get(lam, []) if np.asarray(arr).size]
+            if not parts:
+                continue
+            lyap_all = np.concatenate(parts)
             if lyap_all.size == 0:
                 continue
             lam_vals.append(lam)
             avg_lyap.append(float(np.mean(lyap_all)))
-        fig.add_trace(go.Scatter(x=lam_vals, y=avg_lyap, mode="lines+markers",
-                                 marker=dict(size=8, color="#ff7b72"), line=dict(width=2)))
-        fig.update_layout(
-            xaxis_title="λ", yaxis_title="Average Lyapunov exponent",
-            template="plotly_dark", margin=dict(l=70, r=40, t=40, b=60)
-        )
+        if lam_vals:
+            fig.add_trace(go.Scatter(x=lam_vals, y=avg_lyap, mode="lines+markers",
+                                     marker=dict(size=8, color="#ff7b72"), line=dict(width=2)))
+            fig.update_layout(
+                xaxis_title="λ", yaxis_title="Average Lyapunov exponent",
+                template="plotly_dark", margin=dict(l=70, r=40, t=40, b=60)
+            )
+
+    # If pairs were skipped, show a single summary warning to the user
+    if skipped_pairs and total_pairs:
+        st.warning(f"{skipped_pairs}/{total_pairs} Lyapunov–energy array pairs were incompatible and skipped. "
+                   "This usually means the Lyapunov arrays and eigenvalue arrays in some files have different lengths. "
+                   "If this is unexpected, check source `.npz` payload shapes (E vs lyapunov).")
 
     return fig
 
@@ -353,7 +430,7 @@ def main() -> None:
     st.write("### Lyapunov Exponent ⟨λ_LE⟩ Visualization")
     lyap_mode = st.selectbox(
         "Choose Lyapunov visualization type",
-        options=["Heatmap", "Line plots vs Energy", "Scatter plot", "Histogram", "Average λ_LE vs λ"],
+        options=["Line plots vs Energy", "Heatmap",  "Scatter plot", "Histogram", "Average λ_LE vs λ"],
         index=0,
         help="Select the type of visualization for Lyapunov exponents."
     )
@@ -432,16 +509,7 @@ def main() -> None:
     else:
         st.info("Spacing statistics unavailable; ensure mean_r is stored in source files.")
 
-    st.divider()
-    st.subheader("References")
-    st.markdown(
-        """
-**References**
-- S. Ganeshan, J. H. Pixley, S. Das Sarma, *PRL* **114**, 146601 (2015) — Exact mobility edge in 1D AA model.
-- D. J. Thouless, *Phys. Rep.* **13**, 93 (1974) — DOS and localization review.
-- F. Evers, A. D. Mirlin, *RMP* **80**, 1355 (2008) — IPR scaling theory.
-        """
-    )
+    
 
 
 if __name__ == "__main__":

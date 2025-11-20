@@ -14,7 +14,7 @@ def main() -> None:
     This dashboard is part of my active independent research project titled **“Machine Learning Framework for Time-Resolved Mobility Edges in 1D Quasiperiodic Systems.”**
 
     ### Research Motivation
-    The project investigates the dynamics of wavefunctions in quasiperiodic lattices to identify and classify mobility edges using machine learning. While static spectral properties (like IPR) are well-understood, the **time-resolved** behavior of wavepackets near mobility edges offers a rich, dynamical perspective on localization transitions. To learn more, see my <a href="file:///home/shivaji/Documents/PHd_in_Astronomy_file/PHD_project/gaah-dashboard/gaahmodel_quasiperiodic_research.pdf" target="_blank">research plan (PDF)</a> (Machine learning methodology is left to write).
+    The project investigates the dynamics of wavefunctions in quasiperiodic lattices to identify and classify mobility edges using machine learning. While static spectral properties (like IPR) are well-understood, the **time-resolved** behavior of wavepackets near mobility edges offers a rich, dynamical perspective on localization transitions. To learn more, see my <a href="https://github.com/Shivaji-137/gaah-dashboard/blob/master/gaahmodel_quasiperiodic_research.pdf" target="_blank">research plan (PDF)</a> (Machine learning methodology is left to write).
 
     ### Computational Approach
     - **System Sizes**: Simulations cover lattice lengths $L \in \{100, 200, 300, 400, 800, 1000, 1200, 1500, 1800, 2000, 4000, 5000, 10000\}$.
