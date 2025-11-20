@@ -1,0 +1,53 @@
+:root {
+    --primary-color: #62d5ff;
+    --bg-color: #0e1117;
+    --card-bg: #1b1f2a;
+    --text-color: #f0f4ff;
+    --accent-color: #ff7b72;
+}
+
+html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+[data-testid="stSidebar"] {
+    background-color: #141923 !important;
+}
+
+.stMetric {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(98, 213, 255, 0.2);
+}
+
+.stAlert, .stSuccess, .stWarning, .stError {
+    background-color: rgba(98, 213, 255, 0.1) !important;
+    border-radius: 0.75rem !important;
+}
+
+.sidebar .stButton button, .stButton button {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: #0e1117;
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.stDataFrame, .stTable {
+    background-color: var(--card-bg) !important;
+}
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--bg-color);
+    color: #8b949e;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(98, 213, 255, 0.1);
+    z-index: 999;
+}
