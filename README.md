@@ -70,7 +70,6 @@ The backend simulation (`gaahmodel_parallel_timeevol.py`) features:
 gaah-dashboard/
 ├── app.py                       # Main landing page
 ├── gaahmodel_parallel_timeevol.py # Data generation pipeline
-├── LINKEDIN_POST.md             # Draft for social media sharing
 ├── components/
 │   ├── data_access.py           # Data loading & caching
 │   ├── filters.py               # Sidebar filter widgets
