@@ -66,6 +66,8 @@ The backend simulation (`gaahmodel_parallel_timeevol.py`) features:
 -   **Time Evolution**: Unconditionally stable **Crank–Nicolson** integration.
 -   **Parallelization**: `joblib`-based execution on multi-core CPUs.
 
+> **Note**: If you identify any errors or potential issues in the Hamiltonian construction or the Crank-Nicolson time evolution code or physically inaccurate text or code implementation (e.g., results that seem physically inconsistent), please reach out to me. I am open to suggestions for modifications or updates to ensure the simulation's correctness.
+
 ## 📂 Project Structure
 
 ```

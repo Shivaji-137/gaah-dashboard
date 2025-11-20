@@ -176,6 +176,8 @@ def main() -> None:
     ### 4. Parallelization
     - The pipeline uses `joblib` to parallelize tasks across multiple CPU cores, sweeping over parameters like $\lambda$, system size $L$, and phase $\phi$.
 
+    > **Note**: If you identify any errors or potential issues in the Hamiltonian construction or the Crank-Nicolson time evolution code or physically inaccurate text or code implementation (e.g., results that seem physically inconsistent), please reach out to me. I am open to suggestions for modifications or updates to ensure the simulation's correctness.
+
     ## References
 
     1. **S. Ganeshan, J. H. Pixley, and S. Das Sarma**, "Nearest Neighbor Tight Binding Models with an Exact Mobility Edge in One Dimension", *Phys. Rev. Lett.* **114**, 146601 (2015).
