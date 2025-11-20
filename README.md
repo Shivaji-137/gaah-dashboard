@@ -1,5 +1,7 @@
 # GAAH Research Dashboard
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gaahmodelml-researchproject.streamlit.app/)
+
 A professional, interactive research dashboard for analyzing phase transitions, mobility edges, and real-time dynamics in the **Generalized Aubry–André–Harper (GAAH)** model. Built with **Streamlit** and **Python**.
 
 ## 🚀 Project Overview
