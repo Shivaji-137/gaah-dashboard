@@ -22,6 +22,8 @@ $$ H = -t \sum_{n} (|n\rangle\langle n+1| + \text{h.c.}) + \sum_{n} V_n |n\rangl
 ### Quasiperiodic Potential
 $$ V_n = 2\lambda \frac{\cos(2\pi b n + \phi)}{1 - \alpha \cos(2\pi b n + \phi)} $$
 
+Here, b is set equal to $$ \alpha $$, a golden ratio.
+
 ### The Mobility Edge
 The exact analytical boundary is given by:
 $$ \alpha E_c = 2 \text{sgn}(\lambda) (|t| - |\lambda|) $$
